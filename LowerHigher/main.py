@@ -1,175 +1,115 @@
-# Creating a higher lower game
-# I think i will need dictionaries to add cards
-# Asign an integer value to each card for comparison
-# Recursion, Random module,
-# A variable to keep track of the scores
-#
 import random
-CARDS = {
-        # 'profile':[
-        # 'Justin Bieber, Musician',
-        # 'Khloe Kardashian, Television Personality, Model',
-        # 'Beyonce, Musician',
-        # 'Ariana Grande, Actress, Musician',
-        # 'Kim Kardashian, Television Personality, Model, Businesswoman',
-        # 'Dwayne Johnson, Actor, Professional Wrestler',
-        # 'Selena Gomez, Musician, Actress, Businesswoman',
-        # 'Lionel Messi, Footballer playing for PSG',
-        # 'Kylie Jenner, Television Personality, Model and Businesswoman',
-        # 'Christiano Ronaldo, Footballer playing for Manchester United',
-        # ]
-        1:'',
-        2:'',
-        3:'',
-        4:'',
-        5:'',
-        6:'',
-        7:'',
-        8:'',
-        9:'',
-        
-        }
+CARDS = {  #list of the profiles to be compared against each other
+         'profile':[
+         'Roman Reigns, Professinal Wrestler',            #(06.5m)
+         'Jesse Lingard, Footballer, Manchester United ', #(09.7m)
+         'Fabrizio Romano, Journalist, Informant',        #(10.5m)
+         'Usain Bolt, Sportsperson, Jamaican ',           #(11.2m)
+         'KSI, Public figure, Youtuber ',                 #(12.0m)
+         'Lil Nas X, Montero, Musician, Businessman',     #(12.4m)
+         'Tiwa Savage, Musician, Businesswoman ',         #(15.0m)
+         'Joe Biden, President USA ',                     #(17.6m)
+         'Chris Evans, Actor',                            #(17.7m)
+         'Mike Tyson, Boxer, Public figure',              #(19.2m)
+         ]}
 
 
-# CARDS['profile'][0] = 10
-# CARDS['profile'][1] = 9
-# CARDS['profile'][2] = 8
-# CARDS['profile'][3] = 7
-# CARDS['profile'][4] = 6
-# CARDS['profile'][5] = 5
-# CARDS['profile'][6] = 4
-# CARDS['profile'][7] = 3
-# CARDS['profile'][8] = 2
-# CARDS['profile'][9] = 1
-def _cards():
-    COUNT = [1,2,3,4,5,6,7,8,9]
-    return COUNT
-
+# where the program actually begins
 start = input("Do you want to play a game of higherLower? ")
 if start == 'yes':
     pass
 else:
     quit()
 
+# instead of choosing from the above dictionary i.e CARDS at random
+# the program choses from the below COUNT variable and then selects the item with it index in the CARDS['profile'] list
 COUNT = [1,2,3,4,5,6,7,8,9]
 SCORE = 0
+COUNT_ = [1,2,3,4,5,6,7,8,9]
+    
+
 
 def all_game():
-
+    # Prompts the user to play again or end
     def again():
         print('Wrong')
         restart = input("Do you want to play again? ").lower()
         if restart == 'yes':
             all_game()
-        else:
-            print(SCORE)
+        elif restart == 'no':
+            if SCORE >= 5:
+                print(f"Great!!!Your final score is {SCORE}")
+            else:
+                print(f"Your final score is {SCORE}")
             quit()
-
-
-    def A_card():
-        global CARDS
-        global COUNT
-        if len(CARDS['profile']) >= 3:
-            card_ = random.choice(COUNT)
-            COUNT.remove(card_)
-            return(CARDS['profile'][card_])
-        else:
-            COUNT = _cards()
-            card_ = random.choice(COUNT)
-            COUNT.remove(card_)
-            return(CARDS['profile'][card_])
-
-
-    def B_card():
-        global COUNT
-        global CARDS
-        if len(CARDS['profile']) >= 3:
-            card_ = random.choice(COUNT)
-            COUNT.remove(card_)
-            return(CARDS['profile'][card_])
-        else:
-            COUNT = _cards()
-            card_ = random.choice(COUNT)
-            COUNT.remove(card_)
-            return(CARDS['profile'][card_])
-
-
-    A = A_card()
-    B = B_card()
-
-
+    # Produces the first card from the CARDS dictionary
     def display():
-        print(f'Profile A: {A}')
-        print(f'Profile B: {B}')
+        def A_card():
+            global CARDS
+            global COUNT
+            if len(COUNT) >= 3:
+                card_A = random.choice(COUNT)
+                COUNT.remove(card_A)
+                return card_A
+            else:
+                COUNT = COUNT_
+                card_A = random.choice(COUNT)
+                COUNT.remove(card_A)
+                return card_A
+
+        # Produces the second card from the CARDS dictionary
+        def B_card():
+            global COUNT
+            global CARDS
+            if len(COUNT) >= 3:
+                card_B = random.choice(COUNT)
+                COUNT.remove(card_B)
+                return card_B
+            else:
+                COUNT = COUNT_
+                card_B = random.choice(COUNT)
+                COUNT.remove(card_B)
+                return card_B
+
+
+        A = A_card()
+        B = B_card()
+        print(f"Profile A: {CARDS['profile'][A]}")
+        print(f"Profile B: {CARDS['profile'][B]}")
         choice = input("Who has the most followers A/B: ").lower()
         global SCORE
-        if choice == 'a':
-            if A > B:
-                print('right')
-                SCORE += 1
-                all_game()
-            elif A == B:
-                print('Tie')
+        try:
+            if choice == 'a':
+                if A > B:
+                    print('right')
+                    SCORE += 1
+                    # Repeats the program -- recursion
+                    all_game()
+                elif A == B:
+                    print('Tie')
+                else:
+                    again()
+                    
+            elif choice == 'b':
+                if B > A:
+                    print('right')
+                    SCORE += 1
+                    all_game()
+                elif B == A:
+                    print('Tie')
+                else:
+                    again()
             else:
-                again()
-        elif choice == 'b':
-            if B > A:
-                print('right')
-                SCORE += 1
-                all_game()
-            elif B == A:
-                print('Tie')
-            else:
-                again()
-        else:
-            pass
-
+                pass
+            
+        except ValueError as err:  # Did not specify an error couz i wanted to catch all em errors
+            print(err)
+            
+            
     display()
 
 
 all_game()
 
-# def tester(A_picked,B_picked):
-#     for key in CARDS:
-#         if A_picked == key:
-#             print(f"Profile A: {CARDS[key]}") 
-#             profile_A = key
-#     for key in CARDS:
-#         if B_picked == key:
-#             print(f"Profile B: {CARDS[key]}")
-#             profile_B = key 
-#     choice = input("Type A or B").lower()
-#     if (choice == 'a') and (profile_A > profile_B):
-#         print("Right")
-#     elif (choice == 'a') and (profile_A < profile_B):
-#         print('Wrong')
-#     if(choice == 'b') and (profile_B > profile_A):
-#         print("Right")
-#     elif (choice == 'b') and (profile_B < profile_A):
-#         print('Wrong')
-#     else:
-#         card_picker()
-# def card_picker():
-#     cards = [1,2,3,4,5,6,7,8,9,10]
-#     A_picked = random.choice(cards)
-#     B_picked = random.choice(cards)
-#     try:
-#         for card in cards:
-#             if A_picked == card:
-#                 cards.pop(card)
-#         for card in cards:
-#             if B_picked == card:
-#                 cards.pop(card)
-        
-#         if B_picked == A_picked:
-#             card_picker()
-#         if len(cards) > 2:
-#             tester(A_picked,B_picked)
-#         else:
-#             card_picker()
-#     except IndexError as err:
-#         card_picker()
-# card_picker()
 
-
-
+# Not complete though, room for improvement
