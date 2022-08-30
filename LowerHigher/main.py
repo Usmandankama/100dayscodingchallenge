@@ -1,5 +1,5 @@
 import random
-CARDS = {  #list of the profiles to be compared against each other
+CARDS = {  #list of the profiles to be compared against each other as a disctionary
          'profile':[
          'Roman Reigns, Professinal Wrestler',            #(06.5m)
          'Jesse Lingard, Footballer, Manchester United ', #(09.7m)
@@ -42,8 +42,11 @@ def all_game():
             else:
                 print(f"Your final score is {SCORE}")
             quit()
-    # Produces the first card from the CARDS dictionary
+    
     def display():
+                  
+                  
+        # Produces the first card from the CARDS dictionary
         def A_card():
             global CARDS
             global COUNT
@@ -57,6 +60,7 @@ def all_game():
                 COUNT.remove(card_A)
                 return card_A
 
+         
         # Produces the second card from the CARDS dictionary
         def B_card():
             global COUNT
@@ -74,8 +78,12 @@ def all_game():
 
         A = A_card()
         B = B_card()
-        print(f"Profile A: {CARDS['profile'][A]}")
-        print(f"Profile B: {CARDS['profile'][B]}")
+        if A != B:
+            print(f"Profile A: {CARDS['profile'][A]}")
+            print(f"Profile B: {CARDS['profile'][B]}")
+        else:
+            display()  # If the program randomly chooses the same person twice, the program repeats it self
+                  
         choice = input("Who has the most followers A/B: ").lower()
         global SCORE
         try:
@@ -85,8 +93,6 @@ def all_game():
                     SCORE += 1
                     # Repeats the program -- recursion
                     all_game()
-                elif A == B:
-                    print('Tie')
                 else:
                     again()
                     
@@ -94,16 +100,15 @@ def all_game():
                 if B > A:
                     print('right')
                     SCORE += 1
+                    # Repeats the program -- recursion
                     all_game()
-                elif B == A:
-                    print('Tie')
                 else:
                     again()
             else:
                 pass
             
-        except ValueError as err:  # Did not specify an error couz i wanted to catch all em errors
-            print(err)
+        except IndexError:
+            print(f"You have finished the quiz you scored {SCORE}")
             
             
     display()
