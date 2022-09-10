@@ -21,6 +21,7 @@ class Quiz:
         if user_answer.lower() == correct_answer.lower():
             self.score += 1
         if user_answer == 'exit':
+            print(f"You scored {self.score}.")
             quit()
         else:
             pass

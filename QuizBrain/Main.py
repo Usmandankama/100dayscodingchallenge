@@ -1,5 +1,5 @@
 from Data import *
-from QuizBrain import *
+from Logicals import *
 
 
 class Question:
@@ -19,4 +19,4 @@ for question in questions:
 quiz = Quiz(question_bank)
 while True:
     quiz.question_()
-
+# to stop the quiz and get your score printed type exit
