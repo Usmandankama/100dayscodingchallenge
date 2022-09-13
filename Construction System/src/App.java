@@ -20,11 +20,15 @@ public class App {
             for(int i=0; money<80000; i++){
                 System.out.print("Input Budget: ");
                 money = scanner.nextInt();
+                if (i == 2 || i == 4){
+                    System.out.println("Please input a value more than 80k");
+                }
+
             }
             purchase(wood, cement, rods, money);
             build(money, wood, cement, rods);
             System.out.println("Want to build again?y/n: ");
-            answer =scanner.next();
+            answer = scanner.next();
             switch (answer) {
                 case "y":
                     build(money, wood, cement, rods);
@@ -47,7 +51,7 @@ public class App {
     public static void build(int money,int wood,int cement,int rods) {
         int option;
         Scanner scanner = new Scanner(System.in);
-        System.out.println("We have enough resources lets build");
+        System.out.println("We have enough resourcess let build");
         System.out.println("1.Self-contain 80x wood,60x cement, 40xrods-----N40000");
         System.out.println("2.Duplex 180x wood,200x cement, 88x rods-----N78200");
         System.out.println("3.Palace 456x wood,361x cement, 437x rods-----N270800");
