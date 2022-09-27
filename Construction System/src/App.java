@@ -218,4 +218,5 @@ public class App {
         option = scanner.nextInt();
         checker(wood, rods, cement, option, money);
     }
+}
     // -------------------------------BUILD  METHOD-------------------------------
