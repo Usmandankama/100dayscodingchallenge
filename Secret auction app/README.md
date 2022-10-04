@@ -1,0 +1,1 @@
+Open Dist folder & run Main2.exe
