@@ -55,6 +55,11 @@ def submit():
                                         Game.successful.pack()
                                         Game.close_btn.pack(pady=(40, 0))
                                         Game.window.geometry('300x300')
+
+                                        new_user = {f"{email_field}": f"{user_filed}"}
+                                        content.update(new_user)
+                                        with open('users.json','w') as new_file:
+                                            json.dump(content, new_file, indent=4)
                                     else:
                                         Game.show_terms.pack()
                                 else:
@@ -69,15 +74,10 @@ def submit():
                     Game.pwd_field.delete(0,END)
                     messagebox.showinfo(message='Make sure password is long enough')
             else:
-                Game.email_field.destroy()
+                Game.email_field.delete(0, END)
                 messagebox.showinfo(message='Email is already registered')
         else:
             messagebox.showinfo(message='Invalid email')
-
-        new_user = {f"{email_field}": f"{user_filed}"}
-        content.update(new_user)
-        with open('users.json','w') as new_file:
-            json.dump(content, new_file, indent=4)
 
     except KeyError as err:
         print(err)
