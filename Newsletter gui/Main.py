@@ -1,159 +1,251 @@
 import re
 import json
+import time
+import random
+import smtplib
 from tkinter import *
 from tkinter import ttk
+from threading import Thread
 from tkinter import messagebox
+from email.message import EmailMessage
+from concurrent.futures import ThreadPoolExecutor
 
 
-def close():
-    quit()
+class GUI:
 
 
-def focus_pwd(event):
-    Game.pwd_field.focus()
 
-def focus_user(event):
-    Game.user_field.focus()
-    return 'break'
+    def __init__(self):
 
-def enter(event):
-    submit()
+        self.root = Tk()
+        self.root.title('GUI')
+        self.root.geometry('300x450')
+        self.root.resizable(0, 0)
+        self.root.config(bg='white')
 
-def submit():
-    credit = 0
-    try:
+        # Frames
+        self.top_frame = Frame(self.root, bg='white')
+        self.top_frame.pack()
+        self.mid_frame = Frame(self.root, bg='white')
 
-        email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@[a-zA-Z]+\.(com|net|org|io|ng|edu|ie|.)$')
-        email_field = Game.email_field.get()
-        email_match = email_pattern_.fullmatch(email_field)
+        self.bottom_frame = Frame(self.root, bg='white')
 
-        with open('users.json', 'r') as file:
-            content = json.load(file)
-            list_of_registered = [email for email in content]
-            list_of_usernames = [content[email] for email in content]
+        # widgets
+        self.top_label = Label(self.top_frame, text='Newsletter subscription', font=('Arial', 10, 'bold'), bg='white')
+        self.top_label.pack()
 
-        pwd_field = Game.pwd_field.get()
-        user_filed = Game.user_field.get()
+        self.email_label = Label(self.root, text='email', bg='white', font=('Arial', 12, 'bold'), )
+        self.email_label.place(x=55, y=46)
+        self.email_field = Entry(self.top_frame, width=20, font=('Arial', 13), relief=SOLID, )
+        self.email_field.pack(pady=(50, 0))
+        self.email_field.bind('<Return>', self.focus_pwd)
 
-        pref = Game.preference.get()
-        freq = Game.frequency.get()
-        get_terms = Game.terms_agree.state()
-        if not(email_match is None):
-            if not(email_field in list_of_registered):
-                if len(pwd_field) > 8:
-                    if freq != 'Frequency':
-                        if pref != 'Preferences':
-                            if len(user_filed) > 5:
-                                if not(user_filed in list_of_usernames):
-                                    if len(get_terms) == 2:
-                                        Game.show_terms.destroy()
-                                        Game.top_frame.destroy()
-                                        Game.email_label.destroy()
-                                        Game.pwd_label.destroy()
-                                        Game.user_label.destroy()
-                                        Game.bottom_frame.pack()
-                                        Game.successful.pack()
-                                        Game.close_btn.pack(pady=(40, 0))
-                                        Game.window.geometry('300x300')
+        self.pwd_label = Label(self.root, text='password', bg='white', font=('Arial', 12, 'bold'))
+        self.pwd_label.place(x=55, y=95)
+        self.pwd_field = Entry(self.top_frame, width=20, font=('Arial', 13), relief=SOLID, show='*')
+        self.pwd_field.pack(pady=(25, 0))
+        self.pwd_field.bind('<Return>', self.focus_user)
 
-                                        new_user = {f"{email_field}": f"{user_filed}"}
-                                        content.update(new_user)
-                                        with open('users.json','w') as new_file:
-                                            json.dump(content, new_file, indent=4)
+        self.user_label = Label(self.root, text='username', bg='white', font=('Arial', 12, 'bold'))
+        self.user_label.place(x=55, y=143)
+        self.user_field = Entry(self.top_frame, width=20, font=('Arial', 13), relief=SOLID, )
+        self.user_field.pack(pady=(25, 0))
+        self.user_field.bind('<Return>', self.enter)
+
+        val = ['Daily', 'Weekly', 'Monthly']
+        self.frequency = ttk.Combobox(self.top_frame, values=val, width=18, font=('Arial', 13))
+        self.frequency.set('Frequency')
+        self.frequency.pack(pady=(20, 0))
+
+        val1 = ['Business', 'Technology', 'Music', 'Politics', 'Crypto']
+        self.preference = ttk.Combobox(self.top_frame, values=val1, width=18, font=('Arial', 13))
+        self.preference.set('Preferences')
+        self.preference.pack(pady=(20, 0))
+
+        var = IntVar()
+
+        self.terms_agree = ttk.Radiobutton(self.top_frame, text='I agree with terms and condition', variable=var, value=1)
+        self.terms_agree.pack(pady=(20, 0))
+        self.terms_disagree = ttk.Radiobutton(self.top_frame, text='No i do not agree', variable=var, value=0)
+        self.terms_disagree.pack(padx=(0, 0))
+
+        self.submit_btn = Button(self.top_frame, text='Submit', bg='blue', fg='white', font=('Arial', 13, 'bold'), relief=FLAT,
+                            activebackground='blue', activeforeground='white', command=self.submit)
+        self.submit_btn.pack(pady=(20, 0))
+        self.show_terms = Label(self.top_frame, text='You have to accept the terms and conditions', fg='red',
+                           font=('Arial', 10, 'bold'))
+
+        self.pin_label = Label(self.mid_frame, text='Please check your mail for a code we just sent.', font=('Arial', 9, 'bold'),
+                          bg='white')
+        self.pin_label.pack()
+        self.otp_field = Entry(self.mid_frame, font=('Arial', 13, 'bold'), relief=SOLID, bd=2, width=20)
+        self.otp_field.bind('<Return>', self.confirm)
+        self.otp_field.pack(pady=(40, 0))
+        self.confirm_otp_btn = Button(self.mid_frame, text='Confirm', bg='blue', fg='white', font=('Arial', 13, 'bold'),
+                                 relief=FLAT, activebackground='blue', activeforeground='white', command=self.confirm_otp)
+        self.confirm_otp_btn.pack(pady=(20, 0))
+        self.invalid_otp = Label(self.mid_frame, text='Invalid OTP number...please check your mail', fg='red',
+                            font=('Arial', 10, 'bold'), bg='white')
+        self.resend_mail = Button(self.mid_frame, text='resend code', relief=FLAT, bg='white', fg='blue',
+                             font=('Calibri', 10, 'italic'), command=self.resend_otp)
+
+        self.successful = Label(self.bottom_frame, text='Successfully subscribed to our services', bg='white', font=('Arial', 12))
+        self.successful.pack()
+        self.close_btn = Button(self.bottom_frame, text='close', bg='red', fg='white', relief=SOLID, font=('Arial', 16, 'bold'),
+                           command=self.close)
+
+
+        self.pin_ = 0
+
+        self.close_btn.pack(pady=(40, 0))
+        self.root.mainloop()
+
+        
+    
+    def close(self):
+        quit()
+
+
+    def focus_pwd(self,event):
+        self.pwd_field.focus()
+        return 'break'
+
+
+    def focus_user(self,event):
+        self.user_field.focus()
+        return 'break'
+    
+
+    def confirm(self,event):
+        self.confirm_otp()
+
+
+    def enter(self,event):
+        self.submit()
+
+    def send_otp(self):
+        list_of_otp = [random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) for _ in range(6)]
+        self.pin = int(''.join(str(x) for x in list_of_otp))
+        # self.pin_ += self.pin
+
+        to_add = str(self.user_mail)
+        msg = EmailMessage()
+        msg['From'] = '19slsusman@gmail.com'
+        msg['Subject'] = 'OTP code'
+        msg.set_content(f'Your one time pin is: {self.pin}')
+
+        conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
+        conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
+        msg['To'] = to_add
+        conn.send_message(msg)
+
+    def submit(self):
+        try:
+
+            email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@[a-zA-Z]+\.(com|net|org|io|ng|edu|ie|.)$')
+            email_field = self.email_field.get().strip()
+            email_match = email_pattern_.fullmatch(email_field)
+
+
+            with open('users.json', 'r') as file:
+                content = json.load(file)
+                list_of_usernames = [key for key in content]
+                list_of_emails = [value['Email'] for key,value in content.items()]
+
+            pwd_field = self.pwd_field.get()
+            username_pattern = re.compile(pattern=r'[A-Za-z0-9.-]+')
+            user_field= self.user_field.get()
+            username_field = user_field.strip()
+            username_match = username_pattern.fullmatch(username_field)
+
+            pref = self.preference.get()
+            freq = self.frequency.get()
+
+            self.user_mail = email_field
+            self.user_password = pwd_field
+            self.user_name = user_field
+            self.user_pref = pref
+            self.user_freq = freq
+
+            get_terms = self.terms_agree.state()
+            if not (email_match is None):
+                if not (email_field in list_of_emails):
+                    if not(' ' in [x for x in pwd_field]):
+                        if len(pwd_field) > 8:
+                            if not(' ' in [x for x in user_field]):
+                                if freq != 'Frequency':
+                                    if pref != 'Preferences':
+                                        if len(user_field) > 5:
+                                            if not(username_match is None):
+                                                if not (user_field in list_of_usernames):
+                                                    if len(get_terms) == 2:
+                                                        self.send_otp()
+
+                                                        self.user_label.destroy()
+                                                        self.email_label.destroy()
+                                                        self.pwd_label.destroy()
+                                                        self.top_frame.destroy()
+                                                        self.mid_frame.pack()
+                                                        self.otp_field.focus()
+                                                        self.root.geometry('300x250')
+
+                                                    else:
+                                                        self.show_terms.pack()
+                                                else:
+                                                    messagebox.showinfo(message='Username is taken')
+                                            else:
+                                                messagebox.showinfo(message='Invalid username character(s)')
+                                        else:
+                                            messagebox.showinfo(message='Username is taken or too short')
                                     else:
-                                        Game.show_terms.pack()
+                                        messagebox.showinfo(message='Choose your preference please')
                                 else:
-                                    messagebox.showinfo(message='Username is taken')
+                                    messagebox.showinfo(message='Choose frequency please')
                             else:
-                                messagebox.showinfo(message='Username is taken or too short')
+                                messagebox.showinfo(message='Invalid username (remove spaces please)')
                         else:
-                            messagebox.showinfo(message='Choose your preference please')
+                            self.pwd_field.delete(0, END)
+                            messagebox.showinfo(message='Make sure password is long enough')
                     else:
-                        messagebox.showinfo(message='Choose frequency please')
+                        messagebox.showinfo(message='Password cannot contain spaces')
                 else:
-                    Game.pwd_field.delete(0,END)
-                    messagebox.showinfo(message='Make sure password is long enough')
+                    self.email_field.delete(0, END)
+                    messagebox.showinfo(message='Email is already registered')
             else:
-                Game.email_field.delete(0, END)
-                messagebox.showinfo(message='Email is already registered')
-        else:
-            messagebox.showinfo(message='Invalid email')
+                messagebox.showinfo(message='Invalid email')
 
-    except KeyError as err:
-        print(err)
-    except FileNotFoundError:
-        ent = {}
-        with open('users.json','w') as file:
-            json.dump(ent,file)
+        except FileNotFoundError:
+            ent = {}
+            with open('users.json', 'w') as file:
+                json.dump(ent, file)
+                pass
+            self.submit()
+
+        finally:
             pass
-        submit()
 
-    finally:
-        pass
+    def confirm_otp(self):
+        if str(self.otp_field.get()) == str(self.pin):
+            self.mid_frame.destroy()
+            self.bottom_frame.pack()
 
+            with open('users.json', 'r') as file:
+                content = json.load(file)
+            
+            new_user = {f"{self.user_name}":{"Email":f"{self.user_mail}","Password":f"{self.user_password}","Preference":f"{self.user_pref}","Frequency":f"{self.user_freq}"}}
+            content.update(new_user)
+            with open('users.json', 'w') as new_file:
+                json.dump(content, new_file, indent=4)
 
-class Game:
-    window = Tk()
-    window.geometry('300x450')
-    window.title('GUI')
-    window.config(bg='white')
-
-    # Frames
-    top_frame = Frame(window, bg='white')
-    top_frame.pack()
-
-    bottom_frame = Frame(window, bg='white')
-
-    # widgets
-    top_label = Label(top_frame, text='Newsletter subscription', font=('Arial',10,'bold'),bg='white')
-    top_label.pack()
-
-    email_label = Label(window, text='email', bg='white', font=('Arial',12,'bold'),)
-    email_label.place(x=55,y=46)
-    email_field = Entry(top_frame, width=20, font=('Arial', 13), relief=SOLID, )
-    email_field.pack(pady=(50,0))
-    email_field.bind('<Return>', focus_pwd)
-
-    pwd_label = Label(window, text='password', bg='white', font=('Arial', 12,'bold'))
-    pwd_label.place(x=55,y=95)
-    pwd_field = Entry(top_frame, width=20, font=('Arial', 13), relief=SOLID, show='*')
-    pwd_field.pack(pady=(25, 0))
-    pwd_field.bind('<Return>', focus_user)
-
-    user_label = Label(window, text='username', bg='white', font=('Arial', 12,'bold'))
-    user_label.place(x=55,y=143)
-    user_field = Entry(top_frame, width=20, font=('Arial', 13), relief=SOLID,)
-    user_field.pack(pady=(25, 0))
-    user_field.bind('<Return>', enter)
-
-    val = ['Daily','Weekly','Monthly']
-    frequency = ttk.Combobox(top_frame, values=val, width=18, font=('Arial', 13))
-    frequency.set('Frequency')
-    frequency.pack(pady=(20,0))
-
-    val1 = ['Business','Technology','Music','Politics','Crypto']
-    preference = ttk.Combobox(top_frame, values=val1, width=18, font=('Arial', 13))
-    preference.set('Preferences')
-    preference.pack(pady=(20,0))
-
-    var = IntVar()
-
-    terms_agree = ttk.Radiobutton(top_frame, text='I agree with terms and condition', variable=var, value=1)
-    terms_agree.pack(pady=(20,0))
-    terms_disagree = ttk.Radiobutton(top_frame, text='No i do not agree', variable=var, value=0)
-    terms_disagree.pack(padx=(0,0))
-
-    submit_btn = Button(top_frame, text='Submit', bg='blue', fg='white', font=('Arial', 13,'bold'), command=submit, relief=FLAT, activebackground='blue',activeforeground='white')
-    submit_btn.pack(pady=(20,0))
-    show_terms = Label(top_frame, text='You have to accept the terms and conditions', fg='red', font=('Arial', 10, 'bold'))
-
-    successful = Label(bottom_frame, text='Successfully subscribed to our services', bg='white', font=('Arial',12))
-    close_btn = Button(bottom_frame, text='close', bg='red', fg='white', relief=SOLID, font=('Arial',16,'bold'), command=close)
+        else:
+            self.resend_mail.pack(pady=(10,0))
+            self.invalid_otp.pack(pady=(15,0))
+    
+    def resend_otp(self):
+        self.send_otp()
+        self.resend_mail['state'] = 'disabled'
 
 
-Game()
-def auto_focus():
-    Game.email_field.focus()
-auto_focus()
+if __name__ == '__main__':
+    GUI()
 
-Game.window.mainloop()
