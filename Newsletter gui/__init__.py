@@ -1,24 +1,64 @@
-import re
-import json
-import time
-import random
-import smtplib
+import re,json,random,socket,smtplib
 from tkinter import *
 from tkinter import ttk
-from threading import Thread
+# from threading import Thread
 from tkinter import messagebox
 from email.message import EmailMessage
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 
 
-class GUI:
-
-
+class Home:
 
     def __init__(self):
 
+        self.window = Tk()  
+        self.window.geometry("450x400")
+        self.window.resizable(0,0)
+    
+        self.bg = PhotoImage(file = "p.png")
+        
+        self.canvas1 = Canvas( self.window, width = 400, height = 400)
+        self.canvas1.pack(fill = "both", expand = True)
+        self.canvas1.create_image( 0, 0, image = self.bg,anchor = "nw")
+
+        self.label1 = Label(self.canvas1, text='Choose from below options', font=("Arial", 13, 'normal') ,bg=self._from_rgb((247,247,247)))
+
+        self.label2 = Label(self.canvas1, text='Welcome to our newsletter app', font=("Arial", 20, 'bold'),bg=self._from_rgb((247,247,247)))
+        self.label2.pack()
+        self.label1.pack(pady=(30,0))
+
+        self.frame = Frame(self.canvas1, bg=self._from_rgb((247,247,247)))
+        self.frame.pack()
+
+        self.login_btn = Button(self.frame, text='Login', bg='blue', fg='white', relief=FLAT, activebackground='blue', activeforeground='white', font=('Arial', 19), command=self._login_)
+        self.login_btn.grid(row=0, column=0, padx=(0,20), pady=(30,0))
+
+        self.sign_up_btn = Button(self.frame, text='Sign up', bg='blue', fg='white', relief=FLAT, activebackground='blue', activeforeground='white', font=("Arial", 19), command=self._sign_up)
+        self.sign_up_btn.grid(row=0, column=1, padx=(20,0), pady=(30,0))
+
+
+        self.window.mainloop()
+
+    def _from_rgb(self,rgb):
+
+        return "#%02x%02x%02x" % rgb
+    
+    def _sign_up(self):
+       SignUp()
+    
+    def _login_(self):
+        self.window.destroy()
+        Login()
+
+
+class SignUp:
+
+
+# Variables initialization
+    def __init__(self):
+        # Root tweaks
         self.root = Tk()
-        self.root.title('GUI')
+        self.root.title('SignUp')
         self.root.geometry('300x450')
         self.root.resizable(0, 0)
         self.root.config(bg='white')
@@ -79,7 +119,7 @@ class GUI:
                           bg='white')
         self.pin_label.pack()
         self.otp_field = Entry(self.mid_frame, font=('Arial', 13, 'bold'), relief=SOLID, bd=2, width=20)
-        self.otp_field.bind('<Return>', self.confirm)
+        self.otp_field.bind("<Return>", self.confirm_on_keyboard)
         self.otp_field.pack(pady=(40, 0))
         self.confirm_otp_btn = Button(self.mid_frame, text='Confirm', bg='blue', fg='white', font=('Arial', 13, 'bold'),
                                  relief=FLAT, activebackground='blue', activeforeground='white', command=self.confirm_otp)
@@ -100,12 +140,9 @@ class GUI:
         self.close_btn.pack(pady=(40, 0))
         self.root.mainloop()
 
-        
-    
     def close(self):
         quit()
-
-
+    
     def focus_pwd(self,event):
         self.pwd_field.focus()
         return 'break'
@@ -116,7 +153,7 @@ class GUI:
         return 'break'
     
 
-    def confirm(self,event):
+    def confirm_on_keyboard(self,event):
         self.confirm_otp()
 
 
@@ -124,36 +161,43 @@ class GUI:
         self.submit()
 
     def send_otp(self):
-        list_of_otp = [random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) for _ in range(6)]
-        self.pin = int(''.join(str(x) for x in list_of_otp))
-        # self.pin_ += self.pin
+        try: 
+            list_of_otp = [random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) for _ in range(6)]
+            self.pin = int(''.join(str(x) for x in list_of_otp))
+            # self.pin_ += self.pin
 
-        to_add = str(self.user_mail)
-        msg = EmailMessage()
-        msg['From'] = '19slsusman@gmail.com'
-        msg['Subject'] = 'OTP code'
-        msg.set_content(f'Your one time pin is: {self.pin}')
+            to_add = str(self.user_mail)
+            msg = EmailMessage()
+            msg['From'] = '19slsusman@gmail.com'
+            msg['Subject'] = 'OTP code'
+            msg.set_content(f'Your one time pin is: {self.pin}')
 
-        conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
-        conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
-        msg['To'] = to_add
-        conn.send_message(msg)
+            conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
+            conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
+            msg['To'] = to_add
+            conn.send_message(msg)
+        except socket.gaierror:
+            self.ask = messagebox.showerror(message='Please connect to the internet and try again')
+            if self.ask == 'ok':
+                quit()
+        except TimeoutError:
+            messagebox.showerror(message='Request timed out please try again later')
 
     def submit(self):
         try:
 
-            email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@[a-zA-Z]+\.(com|net|org|io|ng|edu|ie|.)$')
+            email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@(gmail|yahoo|aol|outlook)\.(com|net|org|io|ng|edu|ie)$')
             email_field = self.email_field.get().strip()
             email_match = email_pattern_.fullmatch(email_field)
 
 
             with open('users.json', 'r') as file:
                 content = json.load(file)
-                list_of_usernames = [key for key in content]
-                list_of_emails = [value['Email'] for key,value in content.items()]
+                list_of_usernames = [value['Username'] for key,value in content.items()]
+                list_of_emails = [key for key in content]
 
             pwd_field = self.pwd_field.get()
-            username_pattern = re.compile(pattern=r'[A-Za-z0-9.-]+')
+            username_pattern = re.compile(pattern=r'[A-Za-z0-9._-]+')
             user_field= self.user_field.get()
             username_field = user_field.strip()
             username_match = username_pattern.fullmatch(username_field)
@@ -232,10 +276,26 @@ class GUI:
             with open('users.json', 'r') as file:
                 content = json.load(file)
             
-            new_user = {f"{self.user_name}":{"Email":f"{self.user_mail}","Password":f"{self.user_password}","Preference":f"{self.user_pref}","Frequency":f"{self.user_freq}"}}
+            new_user = {f"{self.user_mail}":{"Username":f"{self.user_name}","Password":f"{self.user_password}","Preference":f"{self.user_pref}","Frequency":f"{self.user_freq}"}}
             content.update(new_user)
             with open('users.json', 'w') as new_file:
                 json.dump(content, new_file, indent=4)
+
+            try: 
+                to_add = str(self.user_mail)
+                msg = EmailMessage()
+                msg['From'] = '19slsusman@gmail.com'
+                msg['Subject'] = 'Newsletter'
+                msg.set_content(f'You have successfully subscribed to this newsletter\nYou are going to receive a mail related to {self.user_pref.lower()}...{self.user_freq.lower()}\n\n\nThank you for chosing our services')
+
+                conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
+                conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
+                msg['To'] = to_add
+                conn.send_message(msg)
+            except socket.gaierror:
+                self.ask = messagebox.showerror(message='Please connect to the internet and try again')
+                if self.ask == 'ok':
+                    quit()
 
         else:
             self.resend_mail.pack(pady=(10,0))
@@ -246,6 +306,80 @@ class GUI:
         self.resend_mail['state'] = 'disabled'
 
 
-if __name__ == '__main__':
-    GUI()
+class Login:
 
+
+    def __init__(self):
+
+        # Root tweaks
+        self.root = Tk()
+        self.root.title('Login Page')
+        self.root.geometry('400x200')
+        self.root.resizable(0, 0)
+        self.root.config(bg='white')
+
+        self.frame = Frame(self.root, bg='white')
+        self.frame.pack(pady=(35,0))
+
+        self.bg = PhotoImage(file = "p.png")
+
+        self.frame1 = Frame(self.root, bg='white')
+        self.frame1.pack()
+
+        self.back = Button(self.root, text='<', font=("impact", 19,'bold'), fg='blue', bg='white', relief=FLAT, activebackground='white', activeforeground='blue', command=self.back_)
+        self.back.place(x=0,y=0)
+
+        self.email_label = Label(self.frame, text='Email:', font=("Arial", 13 ), bg='white')
+        self.email_label.grid(row=0, column=0, padx=(0,10))
+
+        self.email_field = Entry(self.frame, width=20, font=("Arial", 13), relief=SOLID, fg='grey')
+        self.email_field.bind("<Return>", self.focus_next)
+        self.email_field.grid(row=0, column=1)
+
+        self.pass_label = Label(self.frame, text='Password:', font=("Arial", 13 ), bg='white')
+        self.pass_label.grid(row=1, column=0, padx=(0,10), pady=(15,0))
+
+        self.pass_field = Entry(self.frame, width=20, font=("Arial", 13), relief=SOLID, fg='grey',show='*')
+        self.pass_field.bind("<Return>", self.submit_login)
+        self.pass_field.grid(row=1, column=1, pady=(15,0))
+
+        self.login_btn = Button(self.frame1, text='Login', width=7, font=("Arial",13,'bold'), relief=FLAT, bg='blue', fg='white', activebackground='blue', activeforeground='white', command=self.Auth)
+        self.login_btn.pack(padx=(50,0), pady=(15,0))
+        self.root.mainloop()
+
+    def focus_next(self,event):
+            self.pass_field.focus()
+            return 'break'
+
+    def submit_login(self,event):
+        self.Auth()
+
+    def Auth(self):
+        try:
+            email_field_text = self.email_field.get()
+            pass_field_text = self.pass_field.get()
+
+            with open('users.json', 'r') as file:
+                content = json.load(file)
+                list_of_emails = [key for key in content]
+
+
+            if email_field_text in list_of_emails:
+                if pass_field_text == content[email_field_text]['Password']:
+                    username = content[email_field_text]['Username']
+                    messagebox.showinfo(message=f'Successfully logged in as {username.title()}')
+                else:
+                    messagebox.showerror(message='Wrong password')
+                    self.pass_field.delete(0,END)
+            else:
+                messagebox.showerror(message='Email is not registred.')
+
+        except FileNotFoundError:
+            messagebox.showerror(message='Our server is under maintenance at the moment, please try again later')
+
+    def back_(self):
+        self.root.destroy()
+        Home()
+
+if __name__ == '__main__':
+    Home()
