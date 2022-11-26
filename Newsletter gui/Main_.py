@@ -4,9 +4,9 @@ from tkinter import ttk
 from bs4 import BeautifulSoup
 from tkinter import messagebox
 from email.message import EmailMessage
-# from concurrent.futures import ThreadPoolExecutor
 
 
+mymail,password_ = '19slsusman@gmail.com','vpjoiwuhhxdtxxre'
 class Home:
 
     def __init__(self):
@@ -166,18 +166,17 @@ class SignUp:
 
             to_add = str(self.user_mail)
             msg = EmailMessage()
-            msg['From'] = '19slsusman@gmail.com'
+            msg['From'] = mymail
             msg['Subject'] = 'OTP code'
             msg.set_content(f'Your one time pin is: {self.pin}')
 
             conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
-            conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
+            conn.login(mymail, password=password_)
             msg['To'] = to_add
             conn.send_message(msg)
         except socket.gaierror:
             self.ask = messagebox.showerror(message='Please connect to the internet and try again')
-            if self.ask == 'ok':
-                quit()
+            self.root.destroy()
         except TimeoutError:
             messagebox.showerror(message='Request timed out please try again later')
 
@@ -257,9 +256,9 @@ class SignUp:
                 messagebox.showinfo(message='Invalid email')
 
         except FileNotFoundError:
-            ent = {}
+            empty_file = {}
             with open('users.json', 'w') as file:
-                json.dump(ent, file)
+                json.dump(empty_file, file)
                 pass
             self.submit()
 
@@ -280,14 +279,15 @@ class SignUp:
                 json.dump(content, new_file, indent=4)
 
             try: 
+
                 to_add = str(self.user_mail)
                 msg = EmailMessage()
-                msg['From'] = '19slsusman@gmail.com'
+                msg['From'] = mymail
                 msg['Subject'] = 'Newsletter'
                 msg.set_content(f'You have successfully subscribed to this newsletter\nYou are going to receive a mail related to {self.user_pref.lower()}...{self.user_freq.lower()}\n\n\nThank you for chosing our services')
 
                 conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
-                conn.login('19slsusman@gmail.com', 'vpjoiwuhhxdtxxre')
+                conn.login(mymail, password=password_)
                 msg['To'] = to_add
                 conn.send_message(msg)
             except socket.gaierror:
@@ -386,7 +386,9 @@ class Login:
         self.info_label.pack(pady=(10,0))
         self.send_all = Button(self.frame2, text='Send to all', bg='blue', fg='white', width=11, font=('Arial', 12), relief=FLAT, activebackground='blue', activeforeground='white', command=self.send_to_all)
         self.send_all.pack(pady=(40,0))
-        self.quitt = Label(self.frame2, text='Program will quit in 5 seconds', font=('Arial',13), bg='white')
+        self.quit_seconds = 20
+        self.quitt = Label(self.frame2, text='', font=('Arial',13), bg='white')
+        self.quitt.pack(pady=(30,0))
         self.root.mainloop()
 
     def focus_next(self,event):
@@ -419,35 +421,74 @@ class Login:
         except FileNotFoundError:
             messagebox.showerror(message='Our server is under maintenance at the moment, please try again later')
     
+    def username_for_email(self, username):
+        self.frame1.destroy()
+        self.frame.destroy()
+        self.back.destroy()
+        self.root.title(f'Logged in as {username}')
+        self.frame2.pack()
+
     def login_admin(self):
+        # email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@(gmail|yahoo|aol|outlook)\.(com|net|org|io|ng|edu|ie)$')
+        # email_field_text = self.email_field.get().strip()
+        # email_match = email_pattern_.fullmatch(email_field_text)
+
+        # if (email_match is not None):
+        #     if len(pass_field_text) >= 8:
         try:
+            email_field_text = self.email_field.get()
             pass_field_text = self.pass_field.get()
 
-            email_pattern_ = re.compile(pattern=r'[A-Za-z0-9.-]+@(gmail|yahoo|aol|outlook)\.(com|net|org|io|ng|edu|ie)$')
-            email_field_text = self.email_field.get().strip()
-            email_match = email_pattern_.fullmatch(email_field_text)
+            with open('Authorised.json', 'r') as file:
+                content = json.load(file)
+                list_of_emails = [key for key in content]
 
-            if (email_match is not None):
-                if len(pass_field_text) >= 8:
-                    self.frame1.destroy()
-                    self.frame.destroy()
-                    self.back.destroy()
-                    self.root.title('Logged in as admin')
-                    self.frame2.pack()
+
+            if email_field_text in list_of_emails:
+                try:
+                    pwd = content[email_field_text]['Password']
+                except KeyError:
+                    messagebox.showwarning(message='Check Authorised.json and set password please')
+                    quit()
+                if pass_field_text == pwd:
+                    try:
+                        self.username = content[email_field_text]['Username']
+                        messagebox.showinfo(message=f'Successfully logged in as {self.username.title()}')
+                    except KeyError:
+                        username = email_field_text
+                        self.username_for_email(username)
+                
+                    self.username_for_email(self.username)
             
-        except Exception as e:
-            print('pass')
+                else:
+                    messagebox.showerror(message='Wrong password')
+                    self.pass_field.delete(0,END)
+            else:
+                messagebox.showerror(message='Email is not registred.')
+
+        except FileNotFoundError:
+            messagebox.showerror(message='Our server is under maintenance at the moment, please try again later')
 
     def send_to_all(self):
-        General().solve()
-        self.send_all.config(state='disabled', bg='white')
+        try:
+            General().solve()
+            self.send_all.config(state='disabled', bg='white')
 
-        def quittin():
-            self.quitt.pack(pady=(10,0))
-            time.sleep(5)
-            self.root.destroy()
+            def quittin():
+                while True:
+                    self.quitt.config(text=f'Program will quit in {self.quit_seconds} seconds')
+                    time.sleep(1)
+                    self.quit_seconds -= 1
+                
+                    if self.quit_seconds == 0:
+                        self.root.destroy()
+                        break
         
-        threading.Thread(target=quittin).start()
+            threading.Thread(target=quittin).start()
+
+        except requests.exceptions.ConnectionError as e:
+            messagebox.showerror(message='Connect to the internet')
+            self.root.destroy()
 
     def back_(self):
         self.root.destroy()
@@ -474,24 +515,26 @@ def politics()->tuple:
     return (title, body, url)
 
 
-
 # BUSINESS______________________________________________________________________________________
 
 def business()->tuple:
-    business_html_file = requests.get(url='https://businessday.ng/').text
-    b_soup = BeautifulSoup(business_html_file, 'lxml')
-    recent_list = b_soup.find('div', class_='row-1')
+    try:
 
+        business_html_file = requests.get(url='https://businessday.ng/').text
+        b_soup = BeautifulSoup(business_html_file, 'lxml')
+        recent_list = b_soup.find('div', class_='row-1')
 
+        news_header = recent_list.find('h3', class_='title')
+        bdy = recent_list.find('div', class_='post-summary')
 
-    news_header = recent_list.find('h3', class_='title')
-    bdy = recent_list.find('div', class_='post-summary')
+        title = news_header.a.getText()
+        url = news_header.a.get('href')
+        body = bdy.getText()
 
-    title = news_header.a.getText()
-    url = news_header.a.get('href')
-    body = bdy.getText()
+        return (title.strip(), body.strip(), url)
 
-    return (title.strip(), body.strip(), url)
+    except requests.exceptions.ConnectionError as e:
+        messagebox.showerror(message='Connect to the internet')
 
 # SPORTS _______________________________________________________________________________________________
 
@@ -530,9 +573,6 @@ def crypto():
 class General:
 
     def __init__(self) -> None:
-
-        self.user_mail = ''
-        self.username = ''
         self.send_message()
 
 
@@ -551,6 +591,9 @@ class General:
             self.spStr = ','.join(str(x) for x in list_of_sp)
             self.crptoStr = ','.join(str(x) for x in list_of_crpto)
 
+        except requests.exceptions.ConnectionError as e:
+            messagebox.showerror(message='Connect to the internet')
+        
         except Exception as e:
             print(e)
 
@@ -565,27 +608,30 @@ class General:
             threading.Thread(target=self.send_crpto).start()
 
     def connection(self,message):
-        mymail = '19slsusman@gmail.com'
         conn = smtplib.SMTP_SSL('smtp.gmail.com', port=465)
 
-        conn.login(user=mymail, password='vpjoiwuhhxdtxxre')
+        conn.login(user=mymail, password=password_)
         conn.send_message(msg=message)
 
     def send_biz(self):
-        biz_title, biz_body, biz_url = business()
+        try:
+            biz_title, biz_body, biz_url = business()
 
-        msg = EmailMessage()
-        msg['From'] = '19slsusman@gmail.com'
-        msg['Subject'] = 'Business update'
-        msg.set_content(f'Title: {biz_title}\n\n\n{biz_body}\nSource: {biz_url}\n\n~sls~')
-        msg['To'] = self.bizStr
-        self.connection(msg)
+            msg = EmailMessage()
+            msg['From'] = mymail
+            msg['Subject'] = 'Business update'
+            msg.set_content(f'Title: {biz_title}\n\n\n{biz_body}\nSource: {biz_url}\n\n~sls~')
+            msg['To'] = self.bizStr
+            self.connection(msg)
+
+        except TypeError:
+            pass
 
     def send_pol(self):
         pol_title, pol_body, pol_url = politics()
 
         msg = EmailMessage()
-        msg['From'] = '19slsusman@gmail.com'
+        msg['From'] = mymail
         msg['Subject'] = 'Politics update'
         msg.set_content(f'Title: {pol_title}\n\n\n{pol_body}\nSource: {pol_url}\n\n~sls~')
         msg['To'] = self.polStr
@@ -595,7 +641,7 @@ class General:
         sp_title, sp_body, sp_url = sport()
 
         msg = EmailMessage()
-        msg['From'] = '19slsusman@gmail.com'
+        msg['From'] = mymail
         msg['Subject'] = 'Sports update'
         msg.set_content(f'Title: {sp_title}\n\n\n{sp_body}\nSource: {sp_url}\n\n~sls~')
         msg['To'] = self.spStr
@@ -605,7 +651,7 @@ class General:
         crpto_title, crpto_body, crpto_url = crypto()
 
         msg = EmailMessage()
-        msg['From'] = '19slsusman@gmail.com'
+        msg['From'] = mymail
         msg['Subject'] = 'Crypto update'
         msg.set_content(f'Title: {crpto_title}\n\n\n{crpto_body}\nSource: {crpto_url}\n\n~sls~')
         msg['To'] = self.crptoStr
